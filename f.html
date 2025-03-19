@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Data Display</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+            margin-bottom: 80px;
+            font-family: Arial, sans-serif;
+            background-color: #856b17;
+        }
+
+        h1 {
+            color: #050101;
+        }
+
+        #container {
+            text-align: center;
+        }
+
+        #data {
+            background: #45f3f0;
+            padding: 100px;
+            border-radius: 75px;
+            box-shadow: 0 0 20px #1e9f2f;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>ESP32_Real-time Data </h1>
+        <div id="data">
+            <p><strong>Daylight:</strong> <span id="daylight">--</span></p>
+            <p><strong>Temperature:</strong> <span id="temp">--</span>°C</p>
+            <p><strong>Humidity:</strong> <span id="humi">--</span>%</p>
+            <p><strong>Timestamp:</strong> <span id="timestamp">--</span></p>
+        </div>
+    </div>
+    <script>
+        async function retrieveLatestData() {
+            try {
+                const apiResponse = await fetch('https://firestore.googleapis.com/v1/projects/josephinteg/databases/(default)/documents/jo?key=AIzaSyCYBWIBrO-oxZwnCOud1u2qZGxWKEi-N6w');
+                const jsonData = await apiResponse.json();
+
+                if (!jsonData.documents || jsonData.documents.length === 0) {
+                    document.getElementById('data').innerHTML = "Data unavailable.";
+                    return;
+                }
+
+                const mostRecentData = jsonData.documents
+                    .map(documentItem => ({
+                        light: documentItem.fields.daylight.stringValue,
+                        temperature: documentItem.fields.temperature.stringValue,
+                        humidity: documentItem.fields.humidity.stringValue,
+                        time: documentItem.fields.timestamp.stringValue
+                    }))
+                    .sort((firstItem, secondItem) => new Date(secondItem.time) - new Date(firstItem.time))[0];
+
+                document.getElementById('daylight').innerText = mostRecentData.light;
+                document.getElementById('temp').innerText = mostRecentData.temperature;
+                document.getElementById('humi').innerText = mostRecentData.humidity;
+                document.getElementById('timestamp').innerText = mostRecentData.time;
+
+            } catch (error) {
+                console.error("Data retrieval failed:", error);
+            }
+        }
+
+        retrieveLatestData();
+        setInterval(retrieveLatestData, 5000);
+    </script>
+</body>
+</html>
